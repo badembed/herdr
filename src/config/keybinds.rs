@@ -1368,6 +1368,126 @@ fn key_codes_match(
     }
 }
 
+fn latin_equivalent(ch: char) -> Option<char> {
+    Some(match ch {
+        'й' => 'q',
+        'ц' => 'w',
+        'у' => 'e',
+        'к' => 'r',
+        'е' => 't',
+        'н' => 'y',
+        'г' => 'u',
+        'ш' => 'i',
+        'щ' => 'o',
+        'з' => 'p',
+        'х' => '[',
+        'ъ' => ']',
+        'ф' => 'a',
+        'ы' | 'і' | 'ї' => 's',
+        'в' => 'd',
+        'а' => 'f',
+        'п' => 'g',
+        'р' => 'h',
+        'о' => 'j',
+        'л' => 'k',
+        'д' => 'l',
+        'ж' => ';',
+        'э' => '\'',
+        'ё' => '`',
+        'я' => 'z',
+        'ч' => 'x',
+        'с' => 'c',
+        'м' => 'v',
+        'и' => 'b',
+        'т' => 'n',
+        'ь' => 'm',
+        'б' => ',',
+        'ю' => '.',
+        'Й' => 'Q',
+        'Ц' => 'W',
+        'У' => 'E',
+        'К' => 'R',
+        'Е' => 'T',
+        'Н' => 'Y',
+        'Г' => 'U',
+        'Ш' => 'I',
+        'Щ' => 'O',
+        'З' => 'P',
+        'Х' => '{',
+        'Ъ' => '}',
+        'Ф' => 'A',
+        'Ы' | 'І' | 'Ї' => 'S',
+        'В' => 'D',
+        'А' => 'F',
+        'П' => 'G',
+        'Р' => 'H',
+        'О' => 'J',
+        'Л' => 'K',
+        'Д' => 'L',
+        'Ж' => ':',
+        'Э' => '"',
+        'Ё' => '~',
+        'Я' => 'Z',
+        'Ч' => 'X',
+        'С' => 'C',
+        'М' => 'V',
+        'И' => 'B',
+        'Т' => 'N',
+        'Ь' => 'M',
+        'Б' => '<',
+        'Ю' => '>',
+        'α' => 'a',
+        'β' => 'b',
+        'γ' => 'g',
+        'δ' => 'd',
+        'ε' | 'έ' => 'e',
+        'ζ' => 'z',
+        'η' | 'ή' => 'h',
+        'θ' => 'u',
+        'ι' | 'ί' | 'ϊ' | 'ΐ' => 'i',
+        'κ' => 'k',
+        'λ' => 'l',
+        'μ' => 'm',
+        'ν' => 'n',
+        'ξ' => 'j',
+        'ο' | 'ό' => 'o',
+        'π' => 'p',
+        'ρ' => 'r',
+        'σ' | 'ς' => 's',
+        'τ' => 't',
+        'υ' | 'ύ' | 'ϋ' | 'ΰ' => 'y',
+        'φ' => 'f',
+        'χ' => 'x',
+        'ψ' => 'c',
+        'ω' | 'ώ' => 'v',
+        'Α' => 'A',
+        'Β' => 'B',
+        'Γ' => 'G',
+        'Δ' => 'D',
+        'Ε' | 'Έ' => 'E',
+        'Ζ' => 'Z',
+        'Η' | 'Ή' => 'H',
+        'Θ' => 'U',
+        'Ι' | 'Ί' | 'Ϊ' => 'I',
+        'Κ' => 'K',
+        'Λ' => 'L',
+        'Μ' => 'M',
+        'Ν' => 'N',
+        'Ξ' => 'J',
+        'Ο' | 'Ό' => 'O',
+        'Π' => 'P',
+        'Ρ' => 'R',
+        'Σ' => 'S',
+        'Τ' => 'T',
+        'Υ' | 'Ύ' | 'Ϋ' => 'Y',
+        'Φ' => 'F',
+        'Χ' => 'X',
+        'Ψ' => 'C',
+        'Ω' | 'Ώ' => 'V',
+        _ => return None,
+    })
+}
+
 fn legacy_shifted_ascii_letter_matches(
     actual_code: KeyCode,
     actual_modifiers: KeyModifiers,
@@ -1423,6 +1543,7 @@ fn shifted_char_matches_expected(
         return true;
     }
     matches!(actual_code, KeyCode::Char(actual) if actual == expected && is_shifted_punctuation(expected))
+        || matches!(actual_code, KeyCode::Char(actual) if latin_equivalent(actual).is_some_and(|latin| latin.eq_ignore_ascii_case(&expected)))
 }
 
 fn is_shifted_punctuation(ch: char) -> bool {
@@ -1711,6 +1832,90 @@ close_tab = "X"
         let shifted_non_ascii = ActionKeybinds::prefix("shift+ö");
         assert!(!shifted_non_ascii
             .matches_prefix_key(&TerminalKey::new(KeyCode::Char('Ö'), KeyModifiers::empty(),)));
+    }
+
+    #[test]
+    fn cyrillic_keypress_matches_latin_binding() {
+        let new_tab = ActionKeybinds::prefix("c");
+        assert!(new_tab
+            .matches_prefix_key(&TerminalKey::new(KeyCode::Char('с'), KeyModifiers::empty())));
+
+        let next_tab = ActionKeybinds::prefix("n");
+        assert!(next_tab
+            .matches_prefix_key(&TerminalKey::new(KeyCode::Char('т'), KeyModifiers::empty())));
+
+        let prev_tab = ActionKeybinds::prefix("p");
+        assert!(prev_tab
+            .matches_prefix_key(&TerminalKey::new(KeyCode::Char('з'), KeyModifiers::empty())));
+
+        let prefix_key =
+            ActionKeybinds::prefix(&format!("ctrl+{}", 'b'));
+        assert!(prefix_key.matches_prefix_key(&TerminalKey::new(
+            KeyCode::Char('и'),
+            KeyModifiers::CONTROL
+        )));
+    }
+
+    #[test]
+    fn cyrillic_uppercase_matches_latin_lowercase_binding() {
+        let binding = ActionKeybinds::prefix("c");
+        assert!(binding
+            .matches_prefix_key(&TerminalKey::new(KeyCode::Char('С'), KeyModifiers::empty())));
+    }
+
+    #[test]
+    fn cyrillic_shifted_matches_latin_binding_case_insensitive() {
+        let binding = ActionKeybinds::prefix("c");
+        assert!(binding.matches_prefix_key(&TerminalKey::new(
+            KeyCode::Char('С'),
+            KeyModifiers::SHIFT
+        )));
+    }
+
+    #[test]
+    fn unmapped_character_does_not_false_match() {
+        // '平' is not in any mapping table
+        let binding = ActionKeybinds::prefix("p");
+        assert!(!binding
+            .matches_prefix_key(&TerminalKey::new(KeyCode::Char('平'), KeyModifiers::empty())));
+    }
+
+    #[test]
+    fn latin_characters_still_match_normally() {
+        let binding = ActionKeybinds::prefix("c");
+        assert!(binding
+            .matches_prefix_key(&TerminalKey::new(KeyCode::Char('c'), KeyModifiers::empty())));
+    }
+
+    #[test]
+    fn greek_keypress_matches_latin_binding() {
+        let binding = ActionKeybinds::prefix("c");
+        assert!(binding
+            .matches_prefix_key(&TerminalKey::new(KeyCode::Char('ψ'), KeyModifiers::empty())));
+
+        let binding = ActionKeybinds::prefix("n");
+        assert!(binding
+            .matches_prefix_key(&TerminalKey::new(KeyCode::Char('ν'), KeyModifiers::empty())));
+    }
+
+    #[test]
+    fn latin_equivalent_maps_common_cyrillic_to_latin() {
+        assert_eq!(latin_equivalent('й'), Some('q'));
+        assert_eq!(latin_equivalent('ц'), Some('w'));
+        assert_eq!(latin_equivalent('с'), Some('c'));
+        assert_eq!(latin_equivalent('т'), Some('n'));
+        assert_eq!(latin_equivalent('з'), Some('p'));
+        assert_eq!(latin_equivalent('и'), Some('b'));
+        assert_eq!(latin_equivalent('м'), Some('v'));
+        assert_eq!(latin_equivalent('С'), Some('C'));
+        assert_eq!(latin_equivalent('Т'), Some('N'));
+    }
+
+    #[test]
+    fn latin_equivalent_returns_none_for_unmapped() {
+        assert_eq!(latin_equivalent('平'), None);
+        assert_eq!(latin_equivalent('a'), None);
+        assert_eq!(latin_equivalent('9'), None);
     }
 
     #[test]
